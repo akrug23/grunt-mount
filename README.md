@@ -12,6 +12,44 @@ npm install --save-dev grunt-mount
 
 # Configuration
 
+You can create a JSON file named `_mapDrive.json` to store the mount info. 
+
+```json
+{
+    "windowsDriveLetter": "X",
+    "nixFileSystem": "smbfs",
+    "mountPoint": "./share",
+    "username": "username",
+    "password": "password",
+    "shareHost": "hostname",
+    "shareFolder": "folder"
+}
+```
+When you use the JSON file you will still need to create the following in Gruntfile.
+
+```js
+grunt.initConfig({
+  mount: {
+    share: {
+      options: {
+        mount: true
+      }
+    }
+  },
+  unmount: {
+    share: {
+      options: {
+        mount: false
+      }
+    }
+  }
+});
+
+grunt.loadNpmTasks('grunt-mount');
+```
+
+Or you can configure it in the GruntFile(Note this will over write the `_mapDrive.json` file)
+
 ```js
 grunt.initConfig({
   mount: {
@@ -29,7 +67,8 @@ grunt.initConfig({
         },
         mountPoint: "./share",          // path to mount the share (can be windows or unix style)
         username: "someuser",
-        password: "password"
+        password: "password",
+        mount: true
       }
     }
   },
@@ -39,7 +78,8 @@ grunt.initConfig({
         windows:{                    // windows specific options
           driveLetter: "X"
         },
-        mountPoint: "./share"
+        mountPoint: "./share",
+        mount: false
       }
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "grunt-mount",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "grunt task to mount a network share",
   "homepage": "https://github.com/opentable/grunt-mount",
   "main": "Gruntfile.js",

@@ -1,4 +1,5 @@
 module.exports = function(grunt){
+    "use strict";
     var path = require('path'),
         fs = require('fs'),
 
@@ -32,26 +33,79 @@ module.exports = function(grunt){
     };
      */
 
+
+
     grunt.registerMultiTask('mount', 'mount a network share', function(){
-        var commandBuilder = require('./lib/command-builder').mount,
-            exec = require('./lib/exec'),
+
+        var options = '',
+            commandBuilder = '',
+            command = '',
+            map = '';
+
+        //Load options either from file or task
+        if (grunt.file.exists('_mapDrive.json')) {
+
+            map = grunt.file.readJSON('_mapDrive.json');
+            
             options = this.options({
-                createMountPoint: false
-            }),
-            command = commandBuilder(options, process.platform, path.sep),
-            done = this.async();
+                        windows: {
+                            driveLetter: map.windowDriveLetter
+                        },
+                        '*nix': {
+                            // options common to linux, mac os
+                            fileSystem: map.nixFileSystem,
+                        },
+                        share: {
+                            host: map.shareHost,
+                            folder: map.shareFolder  // can be /path/to/share or \path\to\share, will be normalised
+                        },
+                        mountPoint: map.mountPoint,       // path to the folder, can be path/to/folder or path\to\folder
+                        username: map.username,
+                        password: map.password,
+                    });
+
+        }
+
+        if (options.mount) {
+            options.createMountPoint = false;
+        } else {
+            options.removeMountPoint = false;
+        }
 
         grunt.verbose.writeflags(options, 'Options');
 
-        if(grunt.file.exists(options.mountPoint)){
-            grunt.log.warn('mount point already exists, deleting');
-            deleteMountPoint(options.mountPoint);
+        var exec = require('./lib/exec'),
+            result = '',
+            done = this.async();
+
+        if (options.mount) {
+            commandBuilder = require('./lib/command-builder').mount;
+            command = commandBuilder(options, process.platform, path.sep);
+
+            if(grunt.file.exists(options.mountPoint)){
+                grunt.log.ok('mount point already exists');
+                done();
+            } else {
+
+                if(process.platform !== 'win32'){
+                    grunt.file.mkdir(options.mountPoint, {force: true});
+                }
+
+                exec(command, grunt, done);
+
+            }
+
+        } else {
+            commandBuilder = require('./lib/command-builder').unmount;
+            command = commandBuilder(options, process.platform, path.sep);
+
+            exec(command, grunt, function(){
+                grunt.verbose.writeln('deleting folder: ' + options.mountPoint);
+                deleteMountPoint(options.mountPoint);
+                done();
+            });
+
         }
 
-        if(process.platform !== 'win32'){
-            grunt.file.mkdir(options.mountPoint, {force: true});
-        }
-
-        exec(command, grunt, done);
     });
 };
